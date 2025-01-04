@@ -79,4 +79,19 @@ public class ProductController {
         return productService.deleteProduct(id) ? new ResponseEntity<>(HttpStatus.NO_CONTENT)
                 : new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
+
+    @PostMapping("/batchUpdate")
+    @Operation(summary = "Update multiple products")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Products updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid product ID in the list")
+    })
+    public ResponseEntity<String> updateMultipleProducts(@RequestBody List<Product> products) {
+        try {
+            productService.updateMultipleProducts(products);
+            return new ResponseEntity<>("Products updated successfully", HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
 }

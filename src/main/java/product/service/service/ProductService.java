@@ -4,6 +4,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import product.service.entity.Product;
+import product.service.exception.ProductNotFoundException;
 import product.service.repository.ProductRepository;
 
 import java.util.List;
@@ -20,32 +21,34 @@ public class ProductService {
     }
 
     public List<Product> getAllProducts() {
-        return productRepository.findAll();
+        List<Product> productList= productRepository.findAll();
+        if (productList.isEmpty()) {
+            throw new ProductNotFoundException("No products found");
+        }
+        return productList;
     }
 
     public Optional<Product> getProductById(Long id) {
-        return productRepository.findById(id);
+        return Optional.ofNullable(productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException("Product with ID " + id + " not Found")));
     }
 
     @Transactional
     public Product updateProduct(Long id, Product product) {
-        if (productRepository.existsById(id)) {
-            product.setId(id);
-            return productRepository.save(product);
-        }
-        return null;
+        Product existingProduct = productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException("Product with ID " + id + " not found"));
+        product.setId(existingProduct.getId());
+        return productRepository.save(product);
     }
 
 
     @Transactional
-    public boolean updateMultipleProducts(List<Product> products) {
+    public void updateMultipleProducts(List<Product> products) {
         for (Product product : products) {
             if (!productRepository.existsById(product.getId())) {
                 throw new IllegalArgumentException("Product with ID " + product.getId() + " does not exist");
             }
-            productRepository.save(product); // Each update is part of a single transaction.
+            productRepository.save(product);
         }
-        return true;
     }
 
     @Transactional
@@ -53,7 +56,8 @@ public class ProductService {
         if (productRepository.existsById(id)) {
             productRepository.deleteById(id);
             return true;
+        }else {
+            throw new ProductNotFoundException("Product with ID " + id + " does not exist");
         }
-        return false;
     }
 }

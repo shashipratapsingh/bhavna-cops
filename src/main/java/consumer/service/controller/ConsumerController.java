@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,48 +27,55 @@ public class ConsumerController {
         return "Consumer service working fine";
     }
 
-    // Create a new product
-    @PostMapping
-    @Operation(summary = "Create a new product")
-    @ApiResponse(responseCode = "201", description = "Product created successfully")
-    public ResponseEntity<Product> createProduct(@Valid @RequestBody Product product) {
-        Product createdProduct = productClient.createProduct(product);
-        return ResponseEntity.status(201).body(createdProduct);
-    }
-
-    // Get all products
     @GetMapping
     @Operation(summary = "Get all products")
     @ApiResponse(responseCode = "200", description = "List of all products")
-    public List<Product> getAllProducts() {
-        return productClient.getAllProducts();
+    @ApiResponse(responseCode = "500", description = "Internal Server Error")
+    public ResponseEntity<?> getAllProducts() {
+        try {
+            List<Product> products = productClient.getAllProducts();
+            return ResponseEntity.ok(products);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to fetch products. Please try again later.");
+        }
     }
 
-    // Get product by ID
+
     @GetMapping("/{id}")
     @Operation(summary = "Get product by ID")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Product found"),
-            @ApiResponse(responseCode = "404", description = "Product not found")
+            @ApiResponse(responseCode = "404", description = "Product not found"),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error")
     })
-    public ResponseEntity<Product> getProductById(@PathVariable Long id) {
-        Product product = productClient.getProductById(id);
-        return product != null ? ResponseEntity.ok(product) : ResponseEntity.notFound().build();
+    public ResponseEntity<?> getProductById(@PathVariable Long id) {
+        try {
+            Product product = productClient.getProductById(id);
+            return product != null
+                    ? ResponseEntity.ok(product)
+                    : ResponseEntity.status(HttpStatus.NOT_FOUND).body("Product not found with ID: " + id);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An error occurred while fetching the product. Please try again later.");
+        }
     }
 
-    // Update a product
+
     @PutMapping("/{id}")
     @Operation(summary = "Update a product")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Product updated successfully"),
-            @ApiResponse(responseCode = "404", description = "Product not found")
+            @ApiResponse(responseCode = "404", description = "Product not found"),
+            @ApiResponse(responseCode = "400", description = "Invalid request body")
     })
     public ResponseEntity<Product> updateProduct(@PathVariable Long id, @Valid @RequestBody Product product) {
-        Product updatedProduct = productClient.updateProduct(id, product);
-        return updatedProduct != null ? ResponseEntity.ok(updatedProduct) : ResponseEntity.notFound().build();
+        Product updatedProduct = productClient.updateProduct(id, product); // This throws ProductNotFoundException if not found
+        return ResponseEntity.ok(updatedProduct);
     }
 
-    // Delete a product
+
+
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a product")
     @ApiResponses({
@@ -78,4 +86,5 @@ public class ConsumerController {
         productClient.deleteProduct(id);
         return ResponseEntity.noContent().build();
     }
+
 }

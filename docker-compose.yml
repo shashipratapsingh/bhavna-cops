@@ -1,0 +1,45 @@
+services:
+  eureka-service:
+    image: eureka-server
+    container_name: eureka-server
+    ports:
+      - 8761:8761
+    networks:
+      - bhavna-cops
+
+  consumer-service:
+    image: consumer-service
+    container_name: consumer-service
+    ports:
+      - 8082:8082
+    networks:
+      - bhavna-cops
+
+  product-service:
+    image: product-service
+    container_name: product-service
+    ports:
+      - 8081:8081
+    networks:
+      - bhavna-cops
+
+  api-gateway:
+    image: api-gateway
+    container_name: api-gateway
+    ports:
+      - 8083:8083
+    networks:
+      - bhavna-cops
+
+  mysql:
+    image: mysql
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - 3600:3306
+    networks:
+      - bhavna-cops
+networks:
+  bhavna-cops:
+    driver: bridge
